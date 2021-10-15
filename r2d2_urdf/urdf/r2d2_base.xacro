@@ -1,0 +1,263 @@
+<?xml version="1.0"?>
+<robot name="R2D2_base" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:property name="base_length" value="0.6"/>
+  <xacro:property name="base_radius" value="0.2"/>
+  <xacro:property name="leg_length" value="0.6"/>
+  <xacro:property name="leg_width" value="0.1"/>
+  <xacro:property name="leg_height" value="0.2"/>
+  <xacro:property name="base_length" value="0.4"/>
+  <xacro:property name="base_width" value="0.1"/>
+  <xacro:property name="base_height" value="0.1"/>
+  <xacro:property name="wheel_length" value="0.1"/>
+  <xacro:property name="wheel_radius" value="0.035"/>  
+  <xacro:property name="head_radius" value="0.2"/>
+  <xacro:property name="box_length" value="0.08"/>
+  <xacro:property name="box_width" value="0.08"/>
+  <xacro:property name="box_height" value="0.08"/>
+
+  <material name="blue">
+    <color rgba="0 0 0.8 1"/>
+  </material>
+  <material name="white">
+    <color rgba="1 1 1 1"/>
+  </material>
+  <material name="black">
+    <color rgba="0 0 0 1"/>
+  </material>
+  
+  <xacro:macro name="base_link">
+  	<link name="base_link">
+      <visual>
+        <geometry>
+      	  <cylinder length="0.6" radius="0.2"/>
+        </geometry>
+        <material name="blue"/>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder length="0.6" radius="0.2"/>
+        </geometry>
+        <contact_coefficients mu="0" kp="1000" kd="1"/>
+      </collision>
+      <inertial>
+        <mass value="10"/>
+        <inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0" izz="0.2" />
+      </inertial> 
+    </link>
+  </xacro:macro>
+
+  <xacro:macro name="leg" params="prefix reflect">
+    <link name="${prefix}_leg">
+      <visual>
+        <geometry>
+          <box size="${leg_length} ${leg_width} ${leg_height}"/>
+        </geometry>
+        <origin rpy="0 ${pi/2} 0" xyz="0 0 -0.3"/>
+        <material name="white"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="${leg_length} ${leg_width} ${leg_height}"/>
+        </geometry>
+        <origin rpy="0 ${pi/2} 0" xyz="0 0 -0.3"/>
+      </collision>
+    </link>
+    <joint name="base_link_to_${prefix}_leg" type="fixed">
+      <parent link="base_link"/>
+      <child link="${prefix}_leg"/>
+      <origin xyz="0 ${reflect*0.22} 0.25"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:macro name="base" params="prefix ">
+  	<link name="${prefix}_base">
+      <visual>
+        <geometry>
+          <box size="${base_length} ${base_width} ${base_height}"/>
+        </geometry>
+        <material name="white"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="${base_length} ${base_width} ${base_height}"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${prefix}_base_joint" type="fixed">
+      <parent link="${prefix}_leg"/>
+      <child link="${prefix}_base"/>
+      <origin xyz="0 0 -0.6"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:macro name="wheel" params="prefix front_or_back reflect">
+  	<link name="${prefix}_${front_or_back}_wheel">
+      <visual>
+        <geometry>
+          <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
+        </geometry>
+        <origin rpy="${pi/2} 0 0"/>
+        <material name="black"/>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
+        </geometry>
+        <origin rpy="${pi/2} 0 0"/>
+      </collision>
+    </link>
+    <joint name="${prefix}_${front_or_back}_wheel_joint" type="continuous">
+      <axis xyz="0 1 0"/>
+      <parent link="${prefix}_base"/>
+      <child link="${prefix}_${front_or_back}_wheel"/>
+      <origin xyz="${-0.13333*reflect} 0 -0.085"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:macro name="head">
+    <link name="head">
+      <visual>
+        <geometry>
+          <sphere  radius="${head_radius}"/>
+        </geometry>
+        <material name="white"/>
+      </visual>
+      <collision>
+         <geometry>
+          <sphere  radius="${head_radius}"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="head_swivel" type="continuous">
+      <axis xyz="0 0 1"/>
+      <parent link="base_link"/>
+      <child link="head"/>
+      <origin xyz="0 0 0.3"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:macro name="Box">
+    <link name="box">
+      <visual>
+        <geometry>
+          <box size="${box_length} ${box_width} ${box_height}"/>
+        </geometry>
+        <material name="blue"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="${box_length} ${box_width} ${box_height}"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="tobox" type="fixed">
+      <parent link="head"/>
+      <child link="box"/>
+      <origin xyz="0.1814 0 0.1414"/>
+    </joint>
+  </xacro:macro>
+  
+
+  <xacro:macro name="gripper_pole">
+    <link name="gripper_pole">
+      <visual>
+        <geometry>
+          <cylinder length="0.2" radius="0.01"/>
+        </geometry>
+        <origin rpy="0 1.57075  0" xyz="0.1 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder length="0.2" radius="0.01"/>
+        </geometry>
+        <origin rpy="0 1.57075  0" xyz="0.1 0 0"/>
+      </collision>
+    </link>
+    <joint name="gripper_extension" type="prismatic">
+      <limit effort="1000" lower="-0.38" upper="0" velocity="0.5"/>
+      <parent link="base_link"/>
+      <child link="gripper_pole"/>
+      <origin xyz="0.19 0 0.2"/>
+      <dynamics damping="0.1" friction="0.1"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:macro name="gripper" params="prefix reflect **content **origin">
+    <link name="${prefix}_gripper">
+      <visual>
+        <geometry>
+          <mesh filename="package://r2d2_urdf/meshes/l_finger.dae"/>
+        </geometry>
+        <xacro:insert_block name="content"/>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://r2d2_urdf/meshes/l_finger.dae"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${prefix}_gripper_joint" type="revolute">
+      <axis xyz="0 0 ${1*reflect}"/>
+      <limit effort="1000" lower="0" upper="1.55" velocity="0.5"/>
+      <parent link="gripper_pole"/>
+      <child link="${prefix}_gripper"/>
+      <origin xyz="0.2 ${0.01*reflect} 0"/>
+      <xacro:insert_block name="origin"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:macro name="tip" params="prefix bool reflect">
+  	<link name="${prefix}_tip">
+  	  <visual>
+        <geometry>
+          <mesh filename="package://r2d2_urdf/meshes/l_finger_tip.dae"/>
+        </geometry>
+        <origin pry="${pi*bool} 0 0" xyz="0.09137 ${0.00495*reflect} 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://r2d2_urdf/meshes/l_finger_tip.dae"/>
+        </geometry>
+        <origin pry="${pi*bool} 0 0" xyz="0.09137 ${0.00495*reflect} 0"/>
+      </collision>
+    </link>
+    <joint name="${prefix}_tip_joint" type="fixed">
+      <parent link="${prefix}_gripper"/>
+      <child link="${prefix}_tip"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:macro name="r2d2_bases">
+    <xacro:base_link/>
+    <xacro:leg prefix="rignt" reflect="-1"/>
+    <xacro:leg prefix="left" reflect="1"/>
+    <xacro:base prefix="rignt" />
+    <xacro:base prefix="left" />
+    <xacro:wheel prefix="rignt" front_or_back="front" reflect="-1"/>
+    <xacro:wheel prefix="rignt" front_or_back="back" reflect="1"/>
+    <xacro:wheel prefix="left" front_or_back="front" reflect="-1"/>
+    <xacro:wheel prefix="left" front_or_back="back" reflect="1"/>
+    <xacro:head/>
+    <xacro:Box/>
+    <xacro:gripper_pole/>
+    <xacro:gripper prefix="left" reflect="1">
+  	  <content>
+      </content>
+  	  <origin>
+  	  </origin>
+    </xacro:gripper>
+    <xacro:gripper prefix="right"  reflect="-1">
+  	  <content>
+        <origin rpy="3.1415926 0 0"/>
+      </content>
+  	  <origin>
+        <mimic joint="left_gripper_joint" multiplier="1" offset="0" />
+  	  </origin>	
+    </xacro:gripper>
+    <xacro:tip prefix="right" bool="1" reflect="-1"/>
+    <xacro:tip prefix="left" bool="0" reflect="1"/>
+  </xacro:macro>
+ 
+
+</robot>
